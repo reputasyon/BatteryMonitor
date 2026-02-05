@@ -73,21 +73,20 @@ struct BatteryInfo {
     }
 
     var menuBarText: String {
+        let w = String(format: "%.0fW", powerWatts)
+        let rate = chargingRatePctPerHour.map { String(format: "%.0f%%/h", $0) }
+
         switch state {
         case .charging:
-            if let rate = chargingRatePctPerHour {
-                return "\(percentage)% \u{26A1}\(String(format: "%.0f", rate))%/h"
-            }
-            return "\(percentage)% \u{26A1}"
+            if let rate { return "\(w) \u{26A1}\(rate)" }
+            return "\(w) \u{26A1}"
         case .discharging:
-            if let rate = chargingRatePctPerHour {
-                return "\(percentage)% \u{2193}\(String(format: "%.0f", rate))%/h"
-            }
-            return "\(percentage)%"
+            if let rate { return "\(w) \u{2193}\(rate)" }
+            return w
         case .full:
-            return "100% \u{2713}"
+            return "\u{2713} Dolu"
         case .pluggedNotCharging:
-            return "\(percentage)% \u{23F8}"
+            return "\(w) \u{23F8}"
         }
     }
 }
