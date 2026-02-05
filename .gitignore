@@ -5,3 +5,5 @@ Package.resolved
 *.xcodeproj
 xcuserdata/
 DerivedData/
+BatteryMonitor.app/
+/tmp/AppIcon.iconset/

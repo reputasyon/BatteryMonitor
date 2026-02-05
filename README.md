@@ -53,30 +53,30 @@ Menu Bar:  🔋 14% ⚡16%/h
 Requires **Xcode 16+** and **macOS 14+**.
 
 ```bash
-git clone https://github.com/abdullahkaragoz/BatteryMonitor.git
+git clone https://github.com/reputasyon/BatteryMonitor.git
 cd BatteryMonitor
-swift build -c release
+chmod +x build.sh
+./build.sh
 ```
 
-The built binary will be at `.build/release/BatteryMonitor`.
+### Install
+
+```bash
+cp -r BatteryMonitor.app /Applications/
+```
 
 ### Run
 
 ```bash
-# Run directly
-swift run
-
-# Or run the built binary
-.build/release/BatteryMonitor
+open /Applications/BatteryMonitor.app
 ```
 
-### Optional: Add to Login Items
+The app lives in your menu bar (no Dock icon). Click the battery icon to see details.
 
-To start automatically on login:
+### Auto-start on Login
 
-1. Build release: `swift build -c release`
-2. Copy to Applications: `cp .build/release/BatteryMonitor /usr/local/bin/`
-3. Add to Login Items in System Settings
+1. Open **System Settings > General > Login Items**
+2. Click **+** and select `/Applications/BatteryMonitor.app`
 
 ## How It Works
 
