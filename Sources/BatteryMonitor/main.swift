@@ -120,8 +120,19 @@ final class BatteryService: ObservableObject {
         timer = nil
     }
 
+    private var lastState: BatteryState?
+    private var stateChangeTime: Date?
+
     func refresh() {
         guard let info = Self.readBattery() else { return }
+
+        // Reset history when charging state changes (plug/unplug)
+        if let last = lastState, last != info.state {
+            history.removeAll()
+            stateChangeTime = Date()
+        }
+        lastState = info.state
+
         current = info
         history.append(info)
         if history.count > 600 { history.removeFirst() }
@@ -130,10 +141,17 @@ final class BatteryService: ObservableObject {
 
     var measuredRatePctPerHour: Double? {
         guard history.count >= 2 else { return nil }
-        let first = history.first!
-        let last = history.last!
+
+        // Use last 2 minutes of data for a sliding window
+        let now = Date()
+        let window: TimeInterval = 120 // 2 minutes
+        let recent = history.filter { now.timeIntervalSince($0.timestamp) <= window }
+        guard recent.count >= 2 else { return nil }
+
+        let first = recent.first!
+        let last = recent.last!
         let dtHours = last.timestamp.timeIntervalSince(first.timestamp) / 3600
-        guard dtHours > 0.005 else { return nil } // at least ~18 seconds
+        guard dtHours >= 0.005 else { return nil } // at least ~18 seconds
         return Double(last.percentage - first.percentage) / dtHours
     }
 
@@ -394,14 +412,19 @@ struct BatteryPopoverView: View {
             }
 
             if let measured = service.measuredRatePctPerHour, abs(measured) > 0.1 {
-                HStack {
-                    Text("Olculen Ort.")
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text(String(format: "%+.1f%%/sa", measured))
-                        .foregroundStyle(.blue)
+                // Only show if direction matches current state
+                let isConsistent = (info.state == .charging && measured > 0) ||
+                                   (info.state == .discharging && measured < 0)
+                if isConsistent {
+                    HStack {
+                        Text("Olculen Ort.")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(String(format: "%+.1f%%/sa", measured))
+                            .foregroundStyle(.blue)
+                    }
+                    .font(.caption)
                 }
-                .font(.caption)
             }
         }
         .padding(.horizontal)
