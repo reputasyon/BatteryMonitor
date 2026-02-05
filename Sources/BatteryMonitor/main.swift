@@ -638,18 +638,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func updateButton() {
         guard let button = statusItem.button else { return }
         if let info = service.current {
-            let icon = NSImage(systemSymbolName: info.batteryIcon, accessibilityDescription: "Battery")
-            icon?.isTemplate = true
-            button.image = icon
-            button.imagePosition = .imageLeading
-
+            button.image = nil
             let text = info.menuBarText
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
             ]
-            button.attributedTitle = NSAttributedString(string: " \(text)", attributes: attrs)
+            button.attributedTitle = NSAttributedString(string: text, attributes: attrs)
         } else {
-            button.title = "Battery"
+            button.title = "..."
         }
     }
 
