@@ -505,12 +505,7 @@ struct BatteryPopoverView: View {
     @ViewBuilder
     func footerSection() -> some View {
         HStack {
-            Text("\(service.history.count) örnek")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-
             Spacer()
-
             Button("Kapat") {
                 NSApplication.shared.terminate(nil)
             }
