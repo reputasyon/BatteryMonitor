@@ -298,7 +298,7 @@ struct BatteryPopoverView: View {
 
             if let rate = info.chargingRatePctPerHour {
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(info.state == .charging ? "Sarj Hizi" : "Tuketim")
+                    Text(info.state == .charging ? "Şarj Hızı" : "Tüketim")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text(String(format: "%.1f%%/sa", rate))
@@ -331,7 +331,7 @@ struct BatteryPopoverView: View {
                 Text("0%")
                 Spacer()
                 if let est = info.estimatedMinutesRemaining {
-                    let label = info.state == .charging ? "Dolu" : "Bos"
+                    let label = info.state == .charging ? "Dolu" : "Boş"
                     Text("\(label): \(formatTime(est))")
                         .font(.system(.caption, design: .rounded, weight: .medium))
                         .foregroundStyle(stateColor(info.state))
@@ -351,24 +351,24 @@ struct BatteryPopoverView: View {
     @ViewBuilder
     func powerSection(_ info: BatteryInfo) -> some View {
         VStack(spacing: 6) {
-            sectionHeader("Guc Detaylari", icon: "bolt.fill")
+            sectionHeader("Güç Detayları", icon: "bolt.fill")
 
             if info.isPluggedIn {
                 if let name = info.adapterName {
-                    infoRow("Adaptor", name)
+                    infoRow("Adaptör", name)
                 }
                 if let inputW = info.adapterInputWatts {
                     let maxW = info.adapterWatts ?? 0
-                    infoRow("Adaptor Giris", String(format: "%.1fW / %dW", inputW, maxW))
+                    infoRow("Adaptör Giriş", String(format: "%.1fW / %dW", inputW, maxW))
                 }
             }
 
-            let powerLabel = info.state == .charging ? "Pile Giden" : "Tuketim"
+            let powerLabel = info.state == .charging ? "Pile Giden Güç" : "Tüketim"
             infoRow(powerLabel, String(format: "%.1fW", info.powerWatts))
 
             infoRow("Voltaj", String(format: "%.2fV", Double(info.voltageMv) / 1000))
 
-            let ampLabel = info.amperageMa < 0 ? "Sarj Akimi" : "Cekilen Akim"
+            let ampLabel = info.amperageMa < 0 ? "Şarj Akımı" : "Çekilen Akım"
             infoRow(ampLabel, "\(abs(info.amperageMa)) mA")
         }
         .padding(.horizontal)
@@ -380,20 +380,20 @@ struct BatteryPopoverView: View {
     @ViewBuilder
     func rateSection(_ info: BatteryInfo) -> some View {
         VStack(spacing: 6) {
-            let title = info.state == .charging ? "Sarj Hizi" : "Tuketim Hizi"
+            let title = info.state == .charging ? "Şarj Hızı" : "Tüketim Hızı"
             sectionHeader(title, icon: "speedometer")
 
             if let rate = info.chargingRatePctPerHour {
                 let prefix = info.state == .charging ? "+" : "-"
-                infoRow("Anlik Hiz", "\(prefix)\(String(format: "%.1f", rate))%/saat")
+                infoRow("Anlık Hız", "\(prefix)\(String(format: "%.1f", rate))%/saat")
 
                 if rate > 0 {
                     let minsPerPct = 60 / rate
-                    infoRow("Her %1 icin", String(format: "%.1f dk", minsPerPct))
+                    infoRow("Her %1 için", String(format: "%.1f dk", minsPerPct))
                 }
 
                 if let est = info.estimatedMinutesRemaining {
-                    let label = info.state == .charging ? "Tamamen Dolu" : "Kalan Sure"
+                    let label = info.state == .charging ? "Tamamen Dolu" : "Kalan Süre"
                     HStack {
                         Text(label)
                             .foregroundStyle(.secondary)
@@ -405,7 +405,7 @@ struct BatteryPopoverView: View {
                     .font(.caption)
                 }
             } else {
-                Text("Hesaplaniyor...")
+                Text("Hesaplanıyor...")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -416,7 +416,7 @@ struct BatteryPopoverView: View {
                                    (info.state == .discharging && measured < 0)
                 if isConsistent {
                     HStack {
-                        Text("Olculen Ort.")
+                        Text("Ölçülen Ort.")
                             .foregroundStyle(.secondary)
                         Spacer()
                         Text(String(format: "%+.1f%%/sa", measured))
@@ -435,12 +435,12 @@ struct BatteryPopoverView: View {
     @ViewBuilder
     func healthSection(_ info: BatteryInfo) -> some View {
         VStack(spacing: 6) {
-            sectionHeader("Pil Sagligi", icon: "heart.fill")
+            sectionHeader("Pil Sağlığı", icon: "heart.fill")
 
             let hp = info.healthPercent
             let hColor: Color = hp >= 80 ? .green : hp >= 60 ? .yellow : .red
             HStack {
-                Text("Saglik")
+                Text("Sağlık")
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text(String(format: "%.1f%%", hp))
@@ -451,7 +451,7 @@ struct BatteryPopoverView: View {
 
             let ccColor: Color = info.cycleCount < 500 ? .green : info.cycleCount < 800 ? .yellow : .red
             HStack {
-                Text("Dongu Sayisi")
+                Text("Döngü Sayısı")
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text("\(info.cycleCount) / 1000")
@@ -465,7 +465,7 @@ struct BatteryPopoverView: View {
             if let temp = info.temperatureC {
                 let tColor: Color = temp < 35 ? .green : temp < 40 ? .yellow : .red
                 HStack {
-                    Text("Sicaklik")
+                    Text("Sıcaklık")
                         .foregroundStyle(.secondary)
                     Spacer()
                     Text(String(format: "%.1f\u{00B0}C", temp))
@@ -505,7 +505,7 @@ struct BatteryPopoverView: View {
     @ViewBuilder
     func footerSection() -> some View {
         HStack {
-            Text("\(service.history.count) ornek")
+            Text("\(service.history.count) örnek")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
 
@@ -560,10 +560,10 @@ struct BatteryPopoverView: View {
 
     func stateLabel(_ state: BatteryState) -> String {
         switch state {
-        case .charging: return "Sarj Ediliyor"
-        case .discharging: return "Pil Kullaniliyor"
+        case .charging: return "Şarj Ediliyor"
+        case .discharging: return "Pil Kullanılıyor"
         case .full: return "Tam Dolu"
-        case .pluggedNotCharging: return "Takili (sarj etmiyor)"
+        case .pluggedNotCharging: return "Takılı (şarj etmiyor)"
         }
     }
 
