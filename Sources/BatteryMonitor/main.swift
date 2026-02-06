@@ -654,7 +654,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if popover.isShown {
             popover.performClose(nil)
         } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            // Offset the rect downward so popover doesn't stick to the menu bar
+            var rect = button.bounds
+            rect.origin.y -= 8
+            popover.show(relativeTo: rect, of: button, preferredEdge: .minY)
             NSApp.activate()
         }
     }
