@@ -618,43 +618,52 @@ struct BatteryPopoverView: View {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
-    var popover: NSPopover!
+    var panel: NSPanel!
     var service: BatteryService!
-    var eventMonitor: Any?
+    var clickMonitor: Any?
+
+    let panelW: CGFloat = 320
+    let panelH: CGFloat = 520
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         service = BatteryService()
 
-        // Hide from dock
         NSApp.setActivationPolicy(.accessory)
 
-        // Create status bar item
+        // Status bar item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-
         if let button = statusItem.button {
-            button.action = #selector(togglePopover)
+            button.action = #selector(togglePanel)
             button.target = self
         }
 
-        // Create popover
-        popover = NSPopover()
-        popover.contentSize = NSSize(width: 320, height: 500)
-        popover.behavior = .transient
-        popover.animates = true
-        popover.contentViewController = NSHostingController(rootView:
-            BatteryPopoverView(service: service)
-                .padding(.top, 4)
+        // Build the panel
+        panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: panelW, height: panelH),
+            styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
         )
+        panel.isFloatingPanel = true
+        panel.level = .mainMenu + 1
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        panel.isMovableByWindowBackground = false
+        panel.isReleasedWhenClosed = false
+        panel.animationBehavior = .utilityWindow
+        panel.backgroundColor = .windowBackgroundColor
+        panel.hasShadow = true
+        panel.isOpaque = false
 
-        // Start battery monitoring
+        let hosting = NSHostingController(rootView: BatteryPopoverView(service: service))
+        panel.contentView = hosting.view
+
+        // Start monitoring
         service.start()
         updateButton()
 
-        // Update menu bar text periodically
         Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.updateButton()
-            }
+            MainActor.assumeIsolated { self?.updateButton() }
         }
     }
 
@@ -662,23 +671,57 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let button = statusItem.button else { return }
         if let info = service.current {
             button.image = nil
-            let text = info.menuBarText
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
             ]
-            button.attributedTitle = NSAttributedString(string: text, attributes: attrs)
+            button.attributedTitle = NSAttributedString(string: info.menuBarText, attributes: attrs)
         } else {
             button.title = "..."
         }
     }
 
-    @objc func togglePopover() {
-        guard let button = statusItem.button else { return }
-        if popover.isShown {
-            popover.performClose(nil)
+    @objc func togglePanel() {
+        if panel.isVisible {
+            closePanel()
         } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            NSApp.activate()
+            openPanel()
+        }
+    }
+
+    func openPanel() {
+        guard let button = statusItem.button,
+              let btnWindow = button.window else { return }
+
+        // Button's screen position
+        let btnRect = button.convert(button.bounds, to: nil)
+        let screenRect = btnWindow.convertToScreen(btnRect)
+
+        // Position panel centered below the button with 6pt gap
+        let x = screenRect.midX - panelW / 2
+        let y = screenRect.minY - panelH - 6
+
+        // Clamp to screen edges
+        if let screen = NSScreen.main?.visibleFrame {
+            let cx = max(screen.minX + 4, min(x, screen.maxX - panelW - 4))
+            panel.setFrame(NSRect(x: cx, y: y, width: panelW, height: panelH), display: true)
+        } else {
+            panel.setFrame(NSRect(x: x, y: y, width: panelW, height: panelH), display: true)
+        }
+
+        panel.orderFrontRegardless()
+        NSApp.activate()
+
+        // Close when clicking outside
+        clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            self?.closePanel()
+        }
+    }
+
+    func closePanel() {
+        panel.orderOut(nil)
+        if let monitor = clickMonitor {
+            NSEvent.removeMonitor(monitor)
+            clickMonitor = nil
         }
     }
 }
