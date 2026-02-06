@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import IOKit
 import Combine
+import ServiceManagement
 
 // MARK: - Battery Data Model
 
@@ -504,14 +505,36 @@ struct BatteryPopoverView: View {
 
     @ViewBuilder
     func footerSection() -> some View {
-        HStack {
-            Spacer()
-            Button("Kapat") {
-                NSApplication.shared.terminate(nil)
+        VStack(spacing: 6) {
+            Toggle(isOn: Binding(
+                get: { SMAppService.mainApp.status == .enabled },
+                set: { newValue in
+                    do {
+                        if newValue {
+                            try SMAppService.mainApp.register()
+                        } else {
+                            try SMAppService.mainApp.unregister()
+                        }
+                    } catch {
+                        print("Login item error: \(error)")
+                    }
+                }
+            )) {
+                Label("Başlangıçta Aç", systemImage: "power")
+                    .font(.caption)
             }
-            .buttonStyle(.plain)
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .toggleStyle(.switch)
+            .controlSize(.mini)
+
+            HStack {
+                Spacer()
+                Button("Kapat") {
+                    NSApplication.shared.terminate(nil)
+                }
+                .buttonStyle(.plain)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal)
         .padding(.vertical, 6)
