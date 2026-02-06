@@ -613,50 +613,14 @@ struct BatteryPopoverView: View {
     }
 }
 
-// MARK: - Floating Panel
-
-final class FloatingPanel: NSPanel {
-    override var canBecomeKey: Bool { true }
-
-    init(contentView: NSView) {
-        super.init(
-            contentRect: .zero,
-            styleMask: [.nonactivatingPanel, .fullSizeContentView],
-            backing: .buffered,
-            defer: true
-        )
-
-        isFloatingPanel = true
-        level = .popUpMenu
-        isOpaque = false
-        backgroundColor = .clear
-        hasShadow = true
-        titleVisibility = .hidden
-        titlebarAppearsTransparent = true
-        isMovableByWindowBackground = false
-        hidesOnDeactivate = true
-        isReleasedWhenClosed = false
-        animationBehavior = .utilityWindow
-
-        self.contentView = contentView
-    }
-
-    override func resignKey() {
-        super.resignKey()
-        orderOut(nil)
-    }
-}
-
 // MARK: - App Delegate
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
-    var panel: FloatingPanel!
+    var popover: NSPopover!
     var service: BatteryService!
-
-    let panelWidth: CGFloat = 320
-    let panelGap: CGFloat = 8 // gap between menu bar and panel
+    var eventMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         service = BatteryService()
@@ -668,20 +632,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            button.action = #selector(togglePanel)
+            button.action = #selector(togglePopover)
             button.target = self
         }
 
-        // Create floating panel with SwiftUI content
-        let hostingView = NSHostingView(rootView: BatteryPopoverView(service: service))
-        hostingView.wantsLayer = true
-        hostingView.layer?.cornerRadius = 12
-        hostingView.layer?.masksToBounds = true
-
-        panel = FloatingPanel(contentView: hostingView)
-        panel.contentView?.wantsLayer = true
-        panel.contentView?.layer?.cornerRadius = 12
-        panel.contentView?.layer?.masksToBounds = true
+        // Create popover
+        popover = NSPopover()
+        popover.contentSize = NSSize(width: 320, height: 500)
+        popover.behavior = .transient
+        popover.animates = true
+        popover.contentViewController = NSHostingController(rootView:
+            BatteryPopoverView(service: service)
+                .padding(.top, 4)
+        )
 
         // Start battery monitoring
         service.start()
@@ -709,34 +672,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc func togglePanel() {
-        if panel.isVisible {
-            panel.orderOut(nil)
+    @objc func togglePopover() {
+        guard let button = statusItem.button else { return }
+        if popover.isShown {
+            popover.performClose(nil)
         } else {
-            showPanel()
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            NSApp.activate()
         }
-    }
-
-    func showPanel() {
-        guard let button = statusItem.button,
-              let buttonWindow = button.window else { return }
-
-        // Get button position on screen
-        let buttonRect = button.convert(button.bounds, to: nil)
-        let screenRect = buttonWindow.convertToScreen(buttonRect)
-
-        // Size the panel to fit content
-        let hostingView = panel.contentView as! NSHostingView<BatteryPopoverView>
-        let fittingSize = hostingView.fittingSize
-        let panelHeight = min(fittingSize.height, 600)
-
-        // Position: centered under the button, with gap
-        let x = screenRect.midX - panelWidth / 2
-        let y = screenRect.minY - panelHeight - panelGap
-
-        panel.setFrame(NSRect(x: x, y: y, width: panelWidth, height: panelHeight), display: true)
-        panel.makeKeyAndOrderFront(nil)
-        NSApp.activate()
     }
 }
 
